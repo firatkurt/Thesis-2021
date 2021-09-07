@@ -1,1 +1,1 @@
-# Thesis-2021
+# Thesis-2021 ReadMeEdit Branch değişiklikleri.

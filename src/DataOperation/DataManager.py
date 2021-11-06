@@ -98,6 +98,7 @@ class DataManager:
         y = _self._encodeLabelColumns(y)
         return X, y
 
+    #TODO: use GetKFold method 
     def TrainDataKFold(_self, n_split=5, shuffle=True, random_state=42):
         kf = KFold(n_splits=n_split, shuffle=shuffle,
                    random_state=random_state)
@@ -106,7 +107,15 @@ class DataManager:
             X_train, X_valid = X.iloc[train_idx], X.iloc[valid_idx]
             y_train, y_valid = y.iloc[train_idx], y.iloc[valid_idx]
             yield X_train, X_valid, y_train, y_valid, fold
-
+    
+    def GetKFold(_self, X, y, n_split=5, shuffle=True, random_state=42):
+        kf = KFold(n_splits=n_split, shuffle=shuffle,
+                   random_state=random_state)
+        for fold, (train_idx, valid_idx) in enumerate(kf.split(X=X, y=y)):
+            X_train, X_valid = X.iloc[train_idx], X.iloc[valid_idx]
+            y_train, y_valid = y.iloc[train_idx], y.iloc[valid_idx]
+            yield X_train, X_valid, y_train, y_valid, fold
+    
     def TrainTestSplit(_self, test_size = 0.2):
         X,y = _self.GetTrainData()
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)

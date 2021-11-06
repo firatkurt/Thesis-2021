@@ -1,52 +1,39 @@
+
+import sys
+from numpy.lib.function_base import average
+sys.path.insert(0, r'C:\Users\FIRAT.KURT\Documents\Thesis_2021\src')
 import pandas as pd
 import numpy as np
 from xgboost import XGBClassifier
 from sklearn.metrics import precision_score
 from DataOperation.DataManager import DataManager
+from HyperParameterTune import XGBoostTuner as xbt
 import EvalMetricFactory as emf
+from sklearn.model_selection import train_test_split
 
 
 class CustomXGBoost:
-    
-    def __init__(_self, dataModel, objective="multi:softmax", n_estimators=100):
-        _self.model = XGBClassifier(
-            objective=objective, n_estimators=n_estimators)
-        _self.dm = dataModel
 
-    def __init__(_self, dataModel, objective="multi:softmax", n_estimator=100, **parameters):
+    def __init__(_self, eval_metric="auc",  early_stopping_rounds=100, n_estimator=100, **parameters):
+        _self.eval_metric = eval_metric
+        _self.early_stopping_rounds = early_stopping_rounds
         _self.model = XGBClassifier(
-            objective=objective, n_estimators=n_estimator, **parameters)
-        _self.dm = dataModel
-
-    @classmethod
-    def FromExactData(cls, XTrain, yTrain, XTest, yTest, objective="multi:softmax", n_estimators=100):
-        dataModel = DataManager.fromExactTrainTestSet(XTrain, yTrain, XTest, yTest)
-        return cls(dataModel, objective, n_estimators)
+            objective = "multi:softmax", n_estimators=n_estimator, **parameters)
     
     @classmethod
-    def FromExactData(cls, XTrain, yTrain, XTest, yTest, objective="multi:softmax", n_estimators=100, **parameters):
-        dataModel = DataManager.fromExactTrainTestSet(XTrain, yTrain, XTest, yTest)
-        return cls(dataModel, objective, n_estimators,**parameters)
-    
-    def fit(_self):
-        for X_tr, X_val, y_tr, y_val, _ in _self.dm.TrainDataKFold():
+    def InitWithTune(cls, X, y, eval_metric="auc",  early_stopping_rounds=100, n_estimator=100):
+        XTrain, XValid, yTrain, yValid = train_test_split(X, y, test_size = 0.2)
+        parameters = xbt.hyperParameterTune(XTrain, XValid, yTrain, yValid)
+        return cls(eval_metric, early_stopping_rounds, n_estimator, parameters)
+
+
+    def fit(_self, X, y):
+        for X_tr, X_val, y_tr, y_val, _ in DataManager.GetKFold(X,y):
             _self.model.fit(X_tr, y_tr, eval_set=[
-                            (X_val, y_val)], eval_metric="auc", early_stopping_rounds=100, verbose=False)
+                            (X_val, y_val)], eval_metric=_self.eval_metric, early_stopping_rounds=_self.early_stopping_rounds, verbose=False)
     
-    def transform(_self):
-        return _self.model.trasform(_self.dm.GetTrainData())
+    def predict(_self, XTest):
+        return _self.model.predict(XTest)
 
-
-    def fit_transform(_self):
-        _self.fit()
-        return _self.trasform()
-
-    def predict(_self):
-        Xtest, _ = _self.dm.GetTestData()
-        return _self.model.predict(Xtest)
-
-    def eval(_self, eval_metric_name):
-        _, y_true = _self.dm.GetTestData()
-        pred = emf.GetEvalMetric(
-            eval_metric_name, y_true=y_true, y_pred=_self.predict())
-        return pred
+    def evals_result(_self):
+        return _self.model.evals_result()

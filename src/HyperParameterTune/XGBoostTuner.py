@@ -31,6 +31,10 @@ def run(trial):
     return prec
 
 def hyperParameterTune(XTrain, XValid, yTrain, yValid):
+    global Xtrain
+    global Xvalid
+    global ytrain
+    global yvalid
     Xtrain = XTrain
     Xvalid = XValid
     ytrain = yTrain

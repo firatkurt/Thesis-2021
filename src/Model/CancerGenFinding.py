@@ -18,16 +18,17 @@ from sklearn.metrics import roc_curve, auc
 from itertools import cycle
 
 
-rootDir =  "C:\\Users\\FIRAT.KURT\\Documents\\Thesis_2021\\"
-trainDataAddress = "C:\\Users\\FIRAT.KURT\\Documents\\Thesis_2021\\TrainDatas\\"
+trainDataAddress = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\TrainDatas\FeatureSelection_20.csv"
+rootDir =  r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\TrainDatas"
+trainDataAddress = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\TrainDatas"
 filelist = os.listdir(trainDataAddress)
-testData = pd.read_csv("C:\\Users\\FIRAT.KURT\\Documents\\Thesis_2021\\TestData.csv")
+testData = pd.read_csv(r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\SourceData\TestData.csv")
 y_test = testData.Subtype
 
 result = {}
 for file in filelist:
     train_data = pd.read_csv(os.path.join(trainDataAddress , file))
-    X_train = train_data.iloc[:,1:-1]
+    X_train = train_data.iloc[:,1:-2]
     y_train = train_data.Subtype
     le = LabelEncoder()
     y = pd.DataFrame(le.fit_transform(y_train))
@@ -48,7 +49,7 @@ for file in filelist:
         X_tr,X_val=X_train.iloc[trn_idx],X_train.iloc[test_idx]
         y_tr,y_val=y.iloc[trn_idx],y.iloc[test_idx]
         
-        model.fit(X_tr,y_tr,eval_set=[(X_val,y_val)], eval_metric="auc",early_stopping_rounds=100,verbose=False)
+        model.fit(X_tr,y_tr,eval_set=[(X_val,y_val)], eval_metric="merror",early_stopping_rounds=100,verbose=False)
         #preds+=model.predict(test_data)/kf.n_splits
         #rmse.append(accuracy_score(y_val, model.predict(X_val)))
         #print(n+1,rmse[n])

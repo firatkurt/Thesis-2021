@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, r'C:\Users\FIRAT.KURT\Documents\Thesis_2021\src')
+sys.path.insert(0, r'C:\Users\FIRAT.KURT\PycharmProjects\Thesis-2021\src')
 import pandas as pd
 import numpy as np
 from xgboost import XGBClassifier
@@ -19,19 +19,20 @@ from sklearn.neighbors import KNeighborsClassifier
 from DataOperation.DataManager import DataManager   
 from Model.CustomXGBoost import CustomXGBoost
 from Model.EnsambleModel import EnsambleModel
+from Model.BlendingModel import *
 
 trainDataAddress = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\TrainDatas\FeatureSelection_20.csv"
-testDataAddress  = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\SourceData\TestData.csv"
+testDataAddress  = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\TrainDatas\FeatureSelection_20.csv"#r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\SourceData\TestData.csv"
 
-dm = DataManager(trainDataAddress, testDataAddress, numericColumns = 'All', columns = (1,-2), label = 'Subtype', encodeLabel = True)
+dm = DataManager.fromCsvFile(trainDataAddress, testDataAddress, numericColumns = 'All', columns = (1,-2), label = 'Subtype', encodeLabel = True)
 
 X,y = dm.GetTrainData()
-
+X_test, y_test = dm.GetTestData()
 models = []
 models.append(('ensemble', EnsambleModel(X, y)))
 models.append(('LDA', LinearDiscriminantAnalysis()))
 models.append(('LGBM', LGBMClassifier()))
-models.append(('CustomXGB', CustomXGBoost.InitWithTune(X,y)))
+models.append(('CustomXGB', CustomXGBoost.initwithtune(X, y)))
 models.append(('XGBM', CustomXGBoost(objective= "multi:softmax",
                                      parameters = {"learning_rate": 0.04586090618716276, 
                                                     "reg_lambda" : 0.06826522569951803, 
@@ -42,7 +43,17 @@ models.append(('XGBM', CustomXGBoost(objective= "multi:softmax",
 models.append(('SVM', SVC()))
 models.append(('KNN', KNeighborsClassifier(n_neighbors=3)))
 
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=1)
+# summarize data split
+print('Train: %s, Val: %s, Test: %s' % (X_train.shape, X_val.shape, X_test.shape))
 
+# train the blending ensemble
+blender = fit_ensemble(models, X, y)
+# make predictions on test set
+yhat = predict_ensemble(models, blender, X_test)
+# evaluate predictions
+score = accuracy_score(y_test, yhat)
+print('Blending Accuracy: %.3f' % (score * 100))
 
 result = {}
 names = []
@@ -64,3 +75,6 @@ for name, model in models:
     print(con)
     result[name] = ( "Accuracy: " + str(acc), "Precision:" + str(prec),
                      "Recall: " + str(rec), "con:" + str(con))
+
+
+

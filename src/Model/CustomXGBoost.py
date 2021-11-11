@@ -1,39 +1,40 @@
-
 import sys
-from numpy.lib.function_base import average
-sys.path.insert(0, r'C:\Users\FIRAT.KURT\Documents\Thesis_2021\src')
-import pandas as pd
-import numpy as np
+sys.path.insert(0, r'C:\Users\FIRAT.KURT\PycharmProjects\Thesis-2021\src')
+from sklearn.base import BaseEstimator, ClassifierMixin
 from xgboost import XGBClassifier
-from sklearn.metrics import precision_score
-from DataOperation.DataManager import DataManager
+from DataOperation.DataManager import *
 from HyperParameterTune import XGBoostTuner as xbt
-import EvalMetricFactory as emf
 from sklearn.model_selection import train_test_split
 
 
-class CustomXGBoost:
+class CustomXGBoost(BaseEstimator, ClassifierMixin):
 
-    def __init__(_self, eval_metric="auc",  early_stopping_rounds=100, n_estimator=100, **parameters):
-        _self.eval_metric = eval_metric
-        _self.early_stopping_rounds = early_stopping_rounds
-        _self.model = XGBClassifier(
-            objective = "multi:softmax", n_estimators=n_estimator, **parameters)
-    
     @classmethod
-    def InitWithTune(cls, X, y, eval_metric="auc",  early_stopping_rounds=100, n_estimator=100):
-        XTrain, XValid, yTrain, yValid = train_test_split(X, y, test_size = 0.2)
+    def initwithtune(cls, X, y, objective="multi:softmax", n_estimators=100,
+                     eval_metric="merror",  early_stopping_rounds=100):
+        XTrain, XValid, yTrain, yValid = train_test_split(X, y, test_size=0.2)
         parameters = xbt.hyperParameterTune(XTrain, XValid, yTrain, yValid)
-        return cls(eval_metric, early_stopping_rounds, n_estimator, parameters)
+        return cls(objective, n_estimators, eval_metric, early_stopping_rounds, **parameters)
 
+    def __init__(self, objective:str = "multi:softmax", n_estimators:int = 100,
+                 eval_metric="merror", early_stopping_rounds=100, **parameters):
+        self.eval_metric = eval_metric
+        self.early_stopping_rounds = early_stopping_rounds
+        self.model = XGBClassifier(objective=objective, **parameters)
 
-    def fit(_self, X, y):
-        for X_tr, X_val, y_tr, y_val, _ in DataManager.GetKFold(X,y):
-            _self.model.fit(X_tr, y_tr, eval_set=[
-                            (X_val, y_val)], eval_metric=_self.eval_metric, early_stopping_rounds=_self.early_stopping_rounds, verbose=False)
-    
-    def predict(_self, XTest):
-        return _self.model.predict(XTest)
+    def fit(self, X, y):
+        for X_tr, X_val, y_tr, y_val, _ in GetKFold(X, y):
+            self.model.fit(X_tr, y_tr, eval_set=[(X_val, y_val)], eval_metric=self.eval_metric,
+                           early_stopping_rounds=self.early_stopping_rounds, verbose=False)
+        return self.model
 
-    def evals_result(_self):
-        return _self.model.evals_result()
+    def predict(self, data, output_margin=False, ntree_limit=None,
+                validate_features=True, base_margin=None):
+        return self.model.predict(data,output_margin, ntree_limit, validate_features, base_margin)
+
+    def predict_proba(self, data, ntree_limit=None, validate_features=True,
+                       base_margin=None):
+        return self.model.predict_proba(data, ntree_limit,validate_features,base_margin)
+
+    def evals_result(self):
+        return self.model.evals_result()

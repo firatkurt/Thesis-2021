@@ -14,20 +14,8 @@ from DataOperation.DataManager import DataManager
 
 class EnsambleModel:
     
-    def __init__(self, XTrain, yTrain):
-        estimators = []
-        model1 = LinearDiscriminantAnalysis()
-        estimators.append(('LDA', model1))
-        model2 = LGBMClassifier()
-        estimators.append(('LGBM', model2))
-        model3 = CustomXGBoost.initwithtune(XTrain, yTrain)
-        #model3 = XGBClassifier(learning_rate = 0.04586090618716276, reg_lambda = 0.06826522569951803, reg_alpha = 1.7871177682650604e-06, subsample = 0.40807207936359097, colsample_bytree = 0.3135487605486668, max_depth = 7)
-        estimators.append(('XGBM', model3))
-        model4 = SVC()
-        estimators.append(('SVM', model4))
-        model5 = KNeighborsClassifier(n_neighbors=3)
-        estimators.append(('KNN', model5))
-        # create the ensemble model
+    def __init__(self, estimators):
+        estimators = estimators
         self.model = VotingClassifier(estimators)
     
     def fit(self, X, y):
@@ -43,3 +31,8 @@ class EnsambleModel:
 
     def evals_result(self):
         return self.model.evals_result()
+
+    def __str__(self):
+        names, _ = zip(*self.model.estimators)
+        result = '_'.join(names)
+        return result

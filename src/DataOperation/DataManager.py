@@ -58,6 +58,7 @@ class DataManager:
                     ):
         trainData = pd.read_csv(trainPath)
         testData = pd.read_csv(testPath)
+        trainData.interpolate
         return cls(trainData,testData, objectColumns, numericColumns, columns,objectColumnEncoderName, numericColumnEncoderName, label, encodeLabel)
 
     @classmethod 

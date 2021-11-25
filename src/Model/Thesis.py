@@ -7,7 +7,8 @@ from sklearn.feature_selection import SelectKBest, f_classif
 import csv
 
 #df = pd.read_excel("C:\\Users\\FIRAT.KURT\\Documents\\Thesis_2021\\sample.xlsx")
-trainData = pd.read_csv("C:\\Users\\FIRAT.KURT\\Documents\\Thesis_2021\\TrainData.csv")
+trainData = pd.read_csv(r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\SourceData\TrainData.csv")
+
 X_train = trainData.iloc[:,1:-1]
 y_train = trainData.Subtype
 

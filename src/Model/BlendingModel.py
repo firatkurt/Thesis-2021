@@ -11,6 +11,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
 from DataOperation.DataManager import DataManager
@@ -41,7 +42,7 @@ def fit_ensemble(models, X, y):
 	# create 2d array from predictions, each set is an input feature
 	#meta_X = hstack(meta_X)
 	# define blending model
-	blender = LogisticRegression()
+	blender = RandomForestClassifier(n_estimators=1000, max_depth=5)
 	# fit on predictions from base models
 	blender.fit(meta_X, y)
 	return blender

@@ -3,24 +3,21 @@ sys.path.insert(0, r'C:\Users\FIRAT.KURT\PycharmProjects\Thesis-2021\src')
 from sklearn.base import BaseEstimator, ClassifierMixin
 from xgboost import XGBClassifier
 from DataOperation.DataManager import *
-from HyperParameterTune import XGBoostTuner as xbt
-from sklearn.model_selection import train_test_split
 
 
 class CustomXGBoost(BaseEstimator, ClassifierMixin):
 
-    @classmethod
-    def initwithtune(cls, X, y, objective="multi:softmax", n_estimators=100,
-                     eval_metric="merror",  early_stopping_rounds=100):
-        XTrain, XValid, yTrain, yValid = train_test_split(X, y, test_size=0.2)
-        parameters = xbt.hyperParameterTune(XTrain, XValid, yTrain, yValid)
-        return cls(objective, n_estimators, eval_metric, early_stopping_rounds, **parameters)
-
-    def __init__(self, objective:str = "multi:softmax", n_estimators:int = 100,
-                 eval_metric="merror", early_stopping_rounds=100, **parameters):
+    def __init__(self, objective:str = "multi:softmax", n_estimators : int = 100,
+                 eval_metric="merror", early_stopping_rounds=100, **parameters: None):
         self.eval_metric = eval_metric
         self.early_stopping_rounds = early_stopping_rounds
-        self.model = XGBClassifier(objective=objective, **parameters)
+        self.n_estimators = n_estimators
+        self.objective = objective
+        self.parameters = parameters
+        if self.parameters:
+            self.model = XGBClassifier(objective=self.objective, n_estimators= self.n_estimators, **self.parameters)
+        else:
+            self.model = XGBClassifier(objective=self.objective, n_estimators=self.n_estimators)
 
     def fit(self, X, y):
         for X_tr, X_val, y_tr, y_val, _ in GetKFold(X, y):

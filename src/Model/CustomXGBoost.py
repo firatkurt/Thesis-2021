@@ -7,8 +7,8 @@ from DataOperation.DataManager import *
 
 class CustomXGBoost(BaseEstimator, ClassifierMixin):
 
-    def __init__(self, objective:str = "multi:softmax", n_estimators : int = 100,
-                 eval_metric="merror", early_stopping_rounds=100, **parameters: None):
+    def __init__(self, objective:str = None, n_estimators : int = 100,
+                 eval_metric= None, early_stopping_rounds=100, **parameters: None):
         self.eval_metric = eval_metric
         self.early_stopping_rounds = early_stopping_rounds
         self.n_estimators = n_estimators

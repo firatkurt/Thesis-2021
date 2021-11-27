@@ -6,5 +6,5 @@ def GetEncoder(encoderName):
     elif encoderName == 'StandardScaler':
         return pp.StandardScaler() 
     elif encoderName == 'RobustScaler':
-        return pp.RobustScaler(quantile_range=(10,90)) 
+        return pp.RobustScaler(quantile_range=(25,75))
     return pp.MinMaxScaler()

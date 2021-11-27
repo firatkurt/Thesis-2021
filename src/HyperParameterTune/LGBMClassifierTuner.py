@@ -1,15 +1,13 @@
-import numpy as np
-from sklearn.metrics import log_loss
-from sklearn.model_selection import StratifiedKFold
-from optuna.integration import LightGBMPruningCallback
 from lightgbm import LGBMClassifier as lgbm
 from sklearn.metrics import precision_score
+from sklearn.model_selection import train_test_split
 import optuna
 
-Xtrain = None
-Xvalid = None
-ytrain = None
-yvalid = None
+XTrain = None
+XValid = None
+yTrain = None
+yValid = None
+average = 'binary'
 
 def run(trial):
     param_grid = {
@@ -30,22 +28,23 @@ def run(trial):
         ),
     }
 
-    model = lgbm(objective="multiclass", **param_grid)
-    model.fit(Xtrain,ytrain)
-    preds_valid = model.predict(Xvalid)
-    prec = precision_score(yvalid, preds_valid, average='macro')
+    model = lgbm(**param_grid)
+    model.fit(XTrain,yTrain)
+    preds_valid = model.predict(XValid)
+    prec = precision_score(yValid, preds_valid, average=average)
     return prec
 
-def hyperParameterTune(XTrain, XValid, yTrain, yValid):
-    global Xtrain
-    global Xvalid
-    global ytrain
-    global yvalid
-    Xtrain = XTrain
-    Xvalid = XValid
-    ytrain = yTrain
-    yvalid = yValid
-
+def hyperParameterTune(X, y):
+    global XTrain
+    global XValid
+    global yTrain
+    global yValid
+    global  average
+    XTrain, XValid, yTrain, yValid = train_test_split(X, y, test_size=0.2)
+    average = 'binary'
+    if len(yValid.iloc[:,0].unique()) > 2:
+        average = 'macro'
     study = optuna.create_study(direction='maximize')
     study.optimize(run, n_trials=7)
     return study.best_trial.params
+

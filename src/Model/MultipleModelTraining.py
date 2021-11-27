@@ -1,8 +1,5 @@
 import sys
-
-import pandas as pd
-
-sys.path.insert(0, r'C:\Users\FIRAT.KURT\PycharmProjects\Thesis-2021\src')
+sys.path.insert(0, r'..\\')
 
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.svm import SVC
@@ -20,24 +17,20 @@ from HyperParameterTune import KNNTuner
 from HyperParameterTune import SVCTuner
 from Training.TrainingScore import TrainingScore
 import itertools as it
-from lightgbm import LGBMClassifier
 from HyperParameterTune import LGBMClassifierTuner as lgbmt
 from HyperParameterTune import XGBoostTuner as xbt
-from sklearn.model_selection import train_test_split
 
-trainDataAddress = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\TrainDatas\FeatureSelection_20.csv"
-testDataAddress  = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\TrainDatas\FeatureSelection_20.csv"
-
-def train(trainDataAddress, testDataAddress, numericColumnEncoderName='MinMaxScaler'):
-    dm = DataManager.fromCsvFile(trainDataAddress, testDataAddress, numericColumnEncoderName = numericColumnEncoderName,
-                                 numericColumns = 'All', columns = (1,-1), label = 'Subtype', encodeLabel = True)
+def train(trainDataAddress, testDataAddress, numericColumnEncoderName='MinMaxScaler', labelFilter=None):
+    dm = DataManager.fromCsvFile(trainDataAddress, testDataAddress, numericColumnEncoderName=numericColumnEncoderName,
+                                 numericColumns='All',
+                                 label='Subtype', labelFilter=labelFilter, encodeLabel=True)
     X,y = dm.GetTrainData()
     X_test, y_test = dm.GetTestData()
     allEstimators = []
     allEstimators.append(('LDA', LinearDiscriminantAnalysis()))
-    lgbmParameters = getLGBMTunedParameters(X,y)
+    lgbmParameters = lgbmt.hyperParameterTune(X,y)
     allEstimators.append(('CustomLGBM', CustomLGBMClassifier(**lgbmParameters)))
-    xgBoostParameters = getXGBoostTunedParameters(X,y)
+    xgBoostParameters = xbt.hyperParameterTune(X,y)
     allEstimators.append(('CustomXGB', CustomXGBoost(**xgBoostParameters)))
     svc_c = SVCTuner.hyperParameterTune(X,y)
     allEstimators.append(('SVM', SVC(C=svc_c)))
@@ -58,13 +51,3 @@ def train(trainDataAddress, testDataAddress, numericColumnEncoderName='MinMaxSca
     result.recall_score = recall_score(y_test, yhat, average='macro')
     result.confusion_matrix = confusion_matrix(y_test, yhat)
     return result
-
-def getLGBMTunedParameters(X, y):
-    XTrain, XValid, yTrain, yValid = train_test_split(X, y, test_size=0.2)
-    parameters = lgbmt.hyperParameterTune(XTrain, XValid, yTrain, yValid)
-    return parameters
-
-def getXGBoostTunedParameters(X, y):
-    XTrain, XValid, yTrain, yValid = train_test_split(X, y, test_size=0.2)
-    parameters = xbt.hyperParameterTune(XTrain, XValid, yTrain, yValid)
-    return parameters

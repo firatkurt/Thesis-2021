@@ -4,12 +4,10 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 from lightgbm import LGBMClassifier as lgbm
 from DataOperation.DataManager import *
 
-
-
 class CustomLGBMClassifier(BaseEstimator, ClassifierMixin):
 
-    def __init__(self, objective:str = "multiclass",
-                 eval_metric="multi_logloss", **parameters: None):
+    def __init__(self, objective:str = None,
+                 eval_metric=None, **parameters: None):
         self.eval_metric = eval_metric
         self.objective = objective
         self.parameters = parameters

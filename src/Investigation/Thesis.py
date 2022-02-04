@@ -15,8 +15,8 @@ y_train = trainData.Subtype
 print(X_train.isnull().any().any())
 print(X_train.columns)
 
-minMaxScaler = MinMaxScaler()
-X_train = pd.DataFrame(minMaxScaler.fit_transform(X_train), index=X_train.index,columns=X_train.columns)
+#minMaxScaler = MinMaxScaler()
+#X_train = pd.DataFrame(minMaxScaler.fit_transform(X_train), index=X_train.index,columns=X_train.columns)
 
 feature_List = [10,20,50,100,200,500,750]
 result = {}

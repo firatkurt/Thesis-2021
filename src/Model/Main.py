@@ -8,16 +8,23 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from Model.CustomXGBoost import CustomXGBoost
 from HyperParameterTune import SVCTuner
-
+from sklearn.model_selection import train_test_split
 import MultipleModelTraining as mmt
 import os
 import itertools as it
 import csv
 import pandas as pd
+from DataOperation.DataManager import DataManager
+from sklearn.metrics import recall_score
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_curve
 
+#root = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\TestDatas"
+#testDataAddress = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\TrainDatas\Intersected20.csv"
 
-root = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\TrainDatas"
-testDataAddress = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\SourceData\TestData.csv"
+#root = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\MetaBrickData"
+root = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\Selected_RFE_50"
 trainFiles = os.listdir(root)
 
 #trainData = pd.read_csv(os.path.join(root, 'FeatureSelection_20.csv'))
@@ -26,14 +33,24 @@ trainFiles = os.listdir(root)
 
 #svcParam = SVCTuner.hyperParameterTune(X, y)
 def calculateAllModelResult():
-    numericEncoderlist = ['MinMaxScaler','StandardScaler', 'RobustScaler']
+    numericEncoderlist = ['StandardScaler'] #['MinMaxScaler','StandardScaler', 'RobustScaler']
 
     allModels = it.product(*[trainFiles, numericEncoderlist])
 
     results = {}
     for model in allModels:
         activeTrainingFilePath = os.path.join(root, model[0])
-        result = mmt.train(activeTrainingFilePath, testDataAddress, model[1])
+        data = pd.read_csv(activeTrainingFilePath, header=0)
+        y = data['Subtype']
+        trainData, testData = train_test_split(data, test_size=0.2, stratify=y)
+        # testData = pd.read_csv(testDataAddress)
+        labelFilter = ['Basal', 'LumB', 'LumA', 'Her2', 'Normal']
+        dm = DataManager(trainData, testData, numericColumnEncoderName=model[1], numericColumns='All',
+                         label='Subtype', labelFilter=labelFilter, encodeLabel=True)
+        X, y = dm.GetTrainData()
+        test_X, test_y = dm.GetTestData()
+
+        result = mmt.train(X,y,test_X,test_y)
         results[model] = result
         print(model[0][:-4] +'-' + model[1] +',' + result.__str__())
 
@@ -44,17 +61,37 @@ def calculateAllModelResult():
 
 def calculateHealtyAndOtherResult(fileName, encoderName, labelFilter):
     activeTrainingFilePath = os.path.join(root,fileName)
-    result = mmt.train(activeTrainingFilePath, testDataAddress, labelFilter=labelFilter,
-                       numericColumnEncoderName= encoderName)
+    data = pd.read_csv(activeTrainingFilePath, header=0, sep=',')
+    y= data['Subtype']
+    trainData,testData = train_test_split(data, test_size = 0.2, stratify=y)
+    #testData = pd.read_csv(testDataAddress)
+    dm = DataManager(trainData,testData,numericColumnEncoderName=encoderName,numericColumns='All',
+                     label='Subtype', labelFilter=labelFilter, encodeLabel=True)
+    X, y = dm.GetTrainData()
+    test_X, test_y = dm.GetTestData()
+
+    xgb = CustomXGBoost()
+    xgb.fit(X,y)
+    yhat = xgb.predict(test_X)
+    fpr, tpr, thresholds = roc_curve(test_y, yhat)
+    plt.plot(fpr, tpr)
+    plt.title("ROC Curve")
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.show()
+    #result = mmt.train(X, y, test_X, test_y)
     return  result
 
 
 if __name__ ==  '__main__':
-    basel = calculateHealtyAndOtherResult('FeatureSelection_20.csv', 'RobustScaler', ['Basal', 'Healty'])
-    LumB = calculateHealtyAndOtherResult('FeatureSelection_20.csv','RobustScaler',['LumB', 'Healty'] )
-    LumA = calculateHealtyAndOtherResult('FeatureSelection_20.csv','RobustScaler',['LumA', 'Healty'] )
-    all = calculateHealtyAndOtherResult('FeatureSelection_20.csv', 'RobustScaler', ['Basal',  'LumB', 'LumA','Healty'])
+    #calculateAllModelResult()
+    #basel = calculateHealtyAndOtherResult('RFE_50.csv', None, ['Basal', 'Normal'])
+    #LumB = calculateHealtyAndOtherResult('RFE_50.csv',None,['LumB', 'Normal'] )
+    #LumA = calculateHealtyAndOtherResult('RFE_50.csv',None,['LumA', 'Normal'] )
+    #Her2 = calculateHealtyAndOtherResult('RFE_50.csv',None,['Her2', 'Normal'] )
+    all = calculateHealtyAndOtherResult('RFE_50.csv', None, ['Basal',  'LumB', 'LumA','Her2','Normal'])
     print("basel:" + basel.__str__())
     print("LumB:" + LumB.__str__())
     print("LumA:" + LumA.__str__())
-    print("LumA:" + all.__str__())
+    print("Her2:" + Her2.__str__())
+    print("All:" + all.__str__())

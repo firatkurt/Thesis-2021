@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, r'C:\Users\FIRAT.KURT\PycharmProjects\Thesis-2021\src')
+sys.path.insert(0, r'..//')
 from sklearn.base import BaseEstimator, ClassifierMixin
 from xgboost import XGBClassifier
 from DataOperation.DataManager import *

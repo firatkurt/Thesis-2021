@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, r'C:\Users\FIRAT.KURT\Documents\Thesis_2021\src')
+sys.path.insert(0, r'..//')
 from Model.CustomXGBoost import CustomXGBoost
 import pandas as pd
 import numpy as np
@@ -16,7 +16,7 @@ class EnsambleModel:
     
     def __init__(self, estimators):
         estimators = estimators
-        self.model = VotingClassifier(estimators)
+        self.model = VotingClassifier(estimators, voting='soft')
     
     def fit(self, X, y):
         #for X_tr, X_val, y_tr, y_val, _ in DataManager.GetKFold(X,y):
@@ -27,7 +27,7 @@ class EnsambleModel:
         return self.model.predict(XTest)
 
     def predict_proba(self, data):
-        return self.model.predict_proba()
+        return self.model.predict_proba(data)
 
     def evals_result(self):
         return self.model.evals_result()

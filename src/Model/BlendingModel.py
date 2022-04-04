@@ -3,7 +3,7 @@ import sys
 
 import numpy as np
 
-sys.path.insert(0, r'C:\Users\FIRAT.KURT\PycharmProjects\Thesis-2021\src')
+sys.path.insert(0, r'..//')
 from numpy import hstack
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
@@ -62,3 +62,18 @@ def predict_ensemble(models, blender, X_test):
 	meta_X = hstack(meta_X)
 	# predict
 	return blender.predict(meta_X)
+
+
+def predict_proba_ensemble(models, blender, X_test):
+	# make predictions with base models
+	meta_X = list()
+	for name, model in models:
+		# predict with base model
+		yhat = model.predict(X_test)
+		# store prediction
+		yhat = yhat.reshape(len(yhat), 1)
+		meta_X.append(yhat)
+	# create 2d array from predictions, each set is an input feature
+	meta_X = hstack(meta_X)
+	# predict
+	return blender.predict_proba(meta_X)

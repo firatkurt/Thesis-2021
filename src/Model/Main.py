@@ -1,6 +1,6 @@
 import sys
-sys.path.insert(0, r'..\\')
-#sys.path.insert(0, r'C:\Users\FIRAT.KURT\PycharmProjects\Thesis-2021\src')
+sys.path.insert(0, r'..//')
+#sys.path.insert(0, r'..\')
 from lightgbm import LGBMClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.svm import SVC
@@ -24,7 +24,7 @@ from sklearn.metrics import roc_curve
 #testDataAddress = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\TrainDatas\Intersected20.csv"
 
 #root = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\MetaBrickData"
-root = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\Selected_RFE_50"
+root = r"/Users/firatkurt/Documents/Thesis_Data/Selected_RFE_50"
 trainFiles = os.listdir(root)
 
 #trainData = pd.read_csv(os.path.join(root, 'FeatureSelection_20.csv'))
@@ -65,23 +65,13 @@ def calculateHealtyAndOtherResult(fileName, encoderName, labelFilter):
     y= data['Subtype']
     trainData,testData = train_test_split(data, test_size = 0.2, stratify=y)
     #testData = pd.read_csv(testDataAddress)
-    dm = DataManager(trainData,testData,numericColumnEncoderName=encoderName,numericColumns='All',
+    dm = DataManager(trainData,testData,#numericColumnEncoderName=encoderName,numericColumns='All',
                      label='Subtype', labelFilter=labelFilter, encodeLabel=True)
     X, y = dm.GetTrainData()
     test_X, test_y = dm.GetTestData()
-
-    xgb = CustomXGBoost()
-    xgb.fit(X,y)
-    yhat = xgb.predict(test_X)
-    fpr, tpr, thresholds = roc_curve(test_y, yhat)
-    plt.plot(fpr, tpr)
-    plt.title("ROC Curve")
-    plt.xlabel("False Positive Rate")
-    plt.ylabel("True Positive Rate")
-    plt.show()
-    #result = mmt.train(X, y, test_X, test_y)
+    le = dm.labelEncoder
+    result = mmt.train(X, y, test_X, test_y, le)
     return  result
-
 
 if __name__ ==  '__main__':
     #calculateAllModelResult()
@@ -89,9 +79,9 @@ if __name__ ==  '__main__':
     #LumB = calculateHealtyAndOtherResult('RFE_50.csv',None,['LumB', 'Normal'] )
     #LumA = calculateHealtyAndOtherResult('RFE_50.csv',None,['LumA', 'Normal'] )
     #Her2 = calculateHealtyAndOtherResult('RFE_50.csv',None,['Her2', 'Normal'] )
-    all = calculateHealtyAndOtherResult('RFE_50.csv', None, ['Basal',  'LumB', 'LumA','Her2','Normal'])
-    print("basel:" + basel.__str__())
-    print("LumB:" + LumB.__str__())
-    print("LumA:" + LumA.__str__())
-    print("Her2:" + Her2.__str__())
+    all = calculateHealtyAndOtherResult('RFE_50.csv', 'StandardScaler', ['Basal',  'LumB', 'LumA','Her2','Normal'])
+    #print("basel:" + basel.__str__())
+    #print("LumB:" + LumB.__str__())
+    #print("LumA:" + LumA.__str__())
+    #print("Her2:" + Her2.__str__())
     print("All:" + all.__str__())

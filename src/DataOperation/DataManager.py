@@ -197,7 +197,7 @@ class DataManager:
             self.numerericColumnEncoder = nef.GetEncoder(
                 self.numericColumnEncoderName)
         X_numericColumns = None
-        if self.numericColumns == 'All' :
+        if self.numericColumns == 'All':
             X_numericColumns = X
         elif type(self.numericColumns) == list:
             X_numericColumns = X[self.numericColumns]

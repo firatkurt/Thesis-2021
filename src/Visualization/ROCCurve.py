@@ -11,8 +11,10 @@ from sklearn.multiclass import OneVsRestClassifier
 from sklearn.metrics import roc_auc_score
 
 # Import some data to play with
-root = r"/Users/firatkurt/Documents/Thesis_Data/Selected_RFE_50"
-trainPath = root + r"/RFE_50.csv"
+#root = r"/Users/firatkurt/Documents/Thesis_Data/Selected_RFE_50"
+#trainPath = root + r"/RFE_50.csv"
+root = r"/Users/firatkurt/Documents/Thesis_Data/RFE50_BRCA"
+trainPath = root + r"/RFE50_BRCA_train.csv"
 
 data = pd.read_csv(trainPath, header=0)
 X = data.iloc[:,:-1]
@@ -21,7 +23,7 @@ y = data.iloc[:,-1]
 le = LabelEncoder()
 y = le.fit_transform(y)
 # Binarize the output
-y = label_binarize(y, classes=[0, 1, 2,3,4])
+y = label_binarize(y, classes=[0, 1, 2, 3, 4])
 n_classes = y.shape[1]
 
 

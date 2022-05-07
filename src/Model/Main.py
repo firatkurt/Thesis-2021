@@ -24,7 +24,7 @@ from sklearn.metrics import roc_curve
 #testDataAddress = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\TrainDatas\Intersected20.csv"
 
 #root = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\MetaBrickData"
-root = r"/Users/firatkurt/Documents/Thesis_Data/Selected_RFE_50"
+root = r"/Users/firatkurt/Documents/Thesis_Data/RFE50_BRCA"
 trainFiles = os.listdir(root)
 
 #trainData = pd.read_csv(os.path.join(root, 'FeatureSelection_20.csv'))
@@ -73,15 +73,36 @@ def calculateHealtyAndOtherResult(fileName, encoderName, labelFilter):
     result = mmt.train(X, y, test_X, test_y, le)
     return  result
 
+def calculateHealtyAndOtherTrainTestData(trainFile, testFile, encoderName, labelFilter):
+    activeTrainFilePath = os.path.join(root,trainFile)
+    activeTestFilePath = os.path.join(root,testFile)
+    trainData = pd.read_csv(activeTrainFilePath, header=0, sep=',')
+    testData = pd.read_csv(activeTestFilePath, header=0, sep=',')
+
+    dm = DataManager(trainData, testData, numericColumnEncoderName=encoderName,numericColumns='All',
+                     label='Subtype', labelFilter=labelFilter, encodeLabel=True)
+    X, y = dm.GetTrainData()
+    test_X, test_y = dm.GetTestData()
+    le = dm.labelEncoder
+    result = mmt.train(X, y, test_X, test_y, le)
+    return  result
+
 if __name__ ==  '__main__':
     #calculateAllModelResult()
     #basel = calculateHealtyAndOtherResult('RFE_50.csv', None, ['Basal', 'Normal'])
     #LumB = calculateHealtyAndOtherResult('RFE_50.csv',None,['LumB', 'Normal'] )
     #LumA = calculateHealtyAndOtherResult('RFE_50.csv',None,['LumA', 'Normal'] )
     #Her2 = calculateHealtyAndOtherResult('RFE_50.csv',None,['Her2', 'Normal'] )
-    all = calculateHealtyAndOtherResult('RFE_50.csv', 'StandardScaler', ['Basal',  'LumB', 'LumA','Her2','Normal'])
-    #print("basel:" + basel.__str__())
-    #print("LumB:" + LumB.__str__())
-    #print("LumA:" + LumA.__str__())
-    #print("Her2:" + Her2.__str__())
+    #all = calculateHealtyAndOtherResult('RFE_50.csv', 'StandardScaler', ['Basal',  'LumB', 'LumA','Her2','Normal'])
+
+    basel = calculateHealtyAndOtherTrainTestData('RFE50_BRCA_train.csv', 'RFE50_BRCA_test.csv', 'StandardScaler', ['Basal', 'Healty'])
+    LumB = calculateHealtyAndOtherTrainTestData('RFE50_BRCA_train.csv', 'RFE50_BRCA_test.csv', 'StandardScaler', ['LumB', 'Healty'] )
+    LumA = calculateHealtyAndOtherTrainTestData('RFE50_BRCA_train.csv', 'RFE50_BRCA_test.csv', 'StandardScaler', ['LumA', 'Healty'] )
+    Her2 = calculateHealtyAndOtherTrainTestData('RFE50_BRCA_train.csv', 'RFE50_BRCA_test.csv','StandardScaler', ['Her2', 'Healty'] )
+    all = calculateHealtyAndOtherTrainTestData('RFE50_BRCA_train.csv', 'RFE50_BRCA_test.csv', 'StandardScaler', ['Basal',  'LumB', 'LumA','Her2','Healty'])
+
+    print("basel:" + basel.__str__())
+    print("LumB:" + LumB.__str__())
+    print("LumA:" + LumA.__str__())
+    print("Her2:" + Her2.__str__())
     print("All:" + all.__str__())

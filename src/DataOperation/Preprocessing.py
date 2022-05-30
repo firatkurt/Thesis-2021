@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 
 #df = pd.read_csv("C:\\Users\\FIRAT.KURT\\Documents\\Thesis_2021\\TestData.csv")
 
-df = pd.read_csv("C:\\Users\\FIRAT.KURT\\Documents\\Thesis_2021\\BRCA_exp_subtype_T.csv")
+df = pd.read_csv(r"/Users/firatkurt/Documents/Thesis_Data/SourceData/BRCA_exp_subtype_T.csv")
 print(len(df.values))
 print(len(df.columns))
 #df = df.T.to_csv("BRCA_exp_subtype_T.csv",index=True, header=False)

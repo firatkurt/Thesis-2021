@@ -1,153 +1,222 @@
 import pandas as pd
-import numpy as np
 import sklearn.preprocessing as pp
-import ObjectEncoderFactory as oef
-import NumericEncoderFactory as nef
+from DataOperation import ObjectEncoderFactory as oef
+from DataOperation import NumericEncoderFactory as nef
 from sklearn.model_selection import KFold
+from sklearn.model_selection import train_test_split
 
+def GetKFold(X, y, n_split=5, shuffle=True, random_state=42):
+    y = pd.DataFrame(y)
+    kf = KFold(n_splits=n_split, shuffle=shuffle,
+               random_state=random_state)
+    for fold, (train_idx, valid_idx) in enumerate(kf.split(X=X, y=y)):
+        X_train, X_valid = X.iloc[train_idx], X.iloc[valid_idx]
+        y_train, y_valid = y.iloc[train_idx], y.iloc[valid_idx]
+        yield X_train, X_valid, y_train, y_valid, fold
 
 class DataManager:
-
-    def __init__(_self,
-                 trainPath,
-                 testPath,
-                 objectColumns,
-                 numericColumns,
+       
+    def __init__(self,
+                 trainData,
+                 testData,
+                 objectColumns = None,
+                 numericColumns = None,
                  columns='All',
-                 objectColumnEncoderName='OneHotEncoder',
-                 numericColumnEncoderName='MinMaxScaling',
+                 objectColumnEncoderName ='OneHotEncoder',
+                 numericColumnEncoderName ='MinMaxScaler',
                  label=-1,
+                 labelFilter = None,
                  encodeLabel=False
                  ):
-        _self.trainPath = trainPath
-        _self.testPath = testPath
-        _self.objectColumns = objectColumns
-        _self.numericColumns = numericColumns,
-        _self.objectColumnEncoderName = objectColumnEncoderName
-        _self.numericColumnEncoderName = numericColumnEncoderName
-        _self.columns = columns
-        _self.label = label
-        _self.encodeLabel = encodeLabel
-        _self.__isTrainDataFilled = False
+        self.objectColumns = objectColumns
+        self.numericColumns = numericColumns
+        self.objectColumnEncoderName = objectColumnEncoderName
+        self.numericColumnEncoderName = numericColumnEncoderName
+        self.columns = columns
+        self.label = label
+        self.labelFilter = labelFilter
+        self.encodeLabel = encodeLabel
+        self.__isTrainDataFilled = False
+        self.trainData = trainData
+        self.testData = testData
+        self.numerericColumnEncoder = None
+        self.objectColumnEncoder = None
+        self.labelEncoder = None
 
-    def LoadTrainData(_self):
+    @classmethod 
+    def fromCsvFile(cls,
+                    trainPath,
+                    testPath,
+                    objectColumns = None,
+                    numericColumns = None,
+                    columns='All',
+                    objectColumnEncoderName ='OneHotEncoder',
+                    numericColumnEncoderName ='MinMaxScaler',
+                    label=-1,
+                    labelFilter = None,
+                    encodeLabel=False
+                    ):
+        trainData = pd.read_csv(trainPath)
+        testData = pd.read_csv(testPath)
+        #trainData.interpolate
+        return cls(trainData,testData, objectColumns, numericColumns, columns,objectColumnEncoderName,
+                   numericColumnEncoderName, label, labelFilter, encodeLabel)
+
+    @classmethod 
+    def fromExactTrainTestSet(cls,
+                    XTrain,
+                    yTrain,
+                    XTest,
+                    yTest):
+        trainData = pd.concat(XTrain, yTrain, axis=1)
+        testData = pd.concat(XTest, yTest, axis=1)
+        return cls(trainData,testData)
+
+
+    def LoadTrainData(self):
         try:
-            _self.trainData = pd.read_csv(_self.trainPath)
+            self.trainData = pd.read_csv(self.trainPath)
         except:
             print("An exception occured when loading train data")
             raise Exception("An exception occured when loading train data")
 
-    def LoadTestData(_self):
+    def LoadTestData(self):
         try:
-            _self.testData = pd.read_csv(_self.testPath)
+            self.testData = pd.read_csv(self.testPath)
         except:
             print("An exception occured when loading test data")
             raise Exception("An exception occured when loading test data")
 
-    def GetTrainData(_self):
-        if _self.trainData is None:
-            _self.LoadTrainData()
-        X = _self._fillX(_self.trainData)
-        X = _self._encodeNumericColumns(X)
-        X = _self._encodeObjectColumns(X)
-        y = _self._filly(_self.trainData)
-        y = _self._encodeLabelColumns(y)
-        _self.__isTrainDataFilled = True
-        return (X, y)
+    def GetTrainData(self):
+        if self.trainData is None:
+            self.LoadTrainData()
+        self._filterTrainData_()
+        X = self._fillX(self.trainData)
+        X = self._encodeNumericColumns(X)
+        X = self._encodeObjectColumns(X)
+        y = self._filly(self.trainData)
+        y = self._encodeLabelColumns(y)
+        self.__isTrainDataFilled = True
+        return X, y
 
-    def GetTestData(_self):
-        if _self.testData is None:
-            _self.LoadTestData()
-        if _self.__isTrainDataFilled == False:
-            raise Exception("Train data operations is not completed.")
-        X = _self._fillX(_self.testData)
-        X = _self._encodeNumericColumns(X)
-        X = _self._encodeObjectColumns(X)
-        y = _self._filly(_self.testData)
-        y = _self._encodeLabelColumns(y)
-        return (X, y)
+    def GetTestData(self):
+        if self.testData is None:
+            self.LoadTestData()
+        if self.__isTrainDataFilled == False:
+            self.GetTrainData()
+        self._filterTestData_()
+        X = self._fillX(self.testData)
+        X = self._encodeNumericColumns(X)
+        X = self._encodeObjectColumns(X)
+        y = self._filly(self.testData)
+        y = self._encodeLabelColumns(y)
+        return X, y
 
-    def TrainDataKFold(_self, n_split=5, shuffle = True, random_state = 42):
-        kf = KFold(n_splits=n_split, shuffle = shuffle, random_state = random_state)
-        X, y = _self.GetTrainData()
+    #TODO: use GetKFold method 
+    def TrainDataKFold(self, n_split=5, shuffle=True, random_state=42):
+        kf = KFold(n_splits=n_split, shuffle=shuffle,
+                   random_state=random_state)
+        X, y = self.GetTrainData()
         for fold, (train_idx, valid_idx) in enumerate(kf.split(X=X, y=y)):
             X_train, X_valid = X.iloc[train_idx], X.iloc[valid_idx]
             y_train, y_valid = y.iloc[train_idx], y.iloc[valid_idx]
             yield X_train, X_valid, y_train, y_valid, fold
 
-    def _fillX(_self, data):
-        if _self.columns == 'All':
-            X = data.loc[:, :-1]
-        elif type(_self.columns) == list:
-            X = data[_self.columns]
-        elif type(_self.columns) == tuple:
-            X = data.loc[:, _self.columns[0]:_self.columns[1]]
+    
+    def TrainTestSplit(self, test_size = 0.2):
+        X,y = self.GetTrainData()
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
+        return X_train, X_test, y_train, y_test
+
+    def _filterTrainData_(self):
+        if type(self.label) == int:
+            self.label = self.trainData.iloc[:, self.label].name
+        if self.labelFilter:
+            self.trainData = self.trainData.loc[self.trainData[self.label].isin(self.labelFilter)]
+
+    def _filterTestData_(self):
+        if type(self.label) == int:
+            self.label = self.testData.iloc[:, self.label].name
+        if self.labelFilter:
+            self.testData = self.testData.loc[self.testData[self.label].isin(self.labelFilter)]
+
+    def _fillX(self, data):
+        if type(self.columns) == str and self.columns == 'All':
+            X = data.iloc[:, :-1]
+        elif type(self.columns) == list:
+            X = data[self.columns]
+        elif type(self.columns) == tuple:
+            X = data.iloc[:, self.columns[0]: self.columns[1]]
         else:
-            raise Exception(f"{_self.columns} columns is not exist in data.")
+            raise Exception(f"{self.columns} columns is not exist in data.")
+        self.columns = X.columns.tolist()
         return X
 
-    def _filly(_self, data):
-        if _self.label == -1:
-            y = data.loc[:, -1]
-        elif _self.label in data.columns:
-            y = data[_self.label]
+    def _filly(self, data):
+        if self.label == -1:
+            y = data.iloc[:, -1]
+        elif self.label in data.columns:
+            y = data[self.label]
         else:
-            raise Exception(f"{_self.label} column is not exist in data.")
+            raise Exception(f"{self.label} column is not exist in data.")
         return y
 
-    def _encodeObjectColumns(_self, X):
-        if _self.objectColumns is None:
-            return
+    def _encodeObjectColumns(self, X):
+        if self.objectColumns is None:
+            return X
         X_objectColumns = None
         isTrain = False
-        if _self.objectColumnEncoder is None:
+        if self.objectColumnEncoder is None:
             isTrain = True
-            _self.objectColumnEncoder = oef.GetEncoder(
-                _self.objectColumnEncoderName)
-        if type(_self.objectColumns) == list:
-            X_objectColumns = X[_self.objectColumns]
-        if type(_self.objectColumns) == tuple:
-            X_objectColumns = X.loc[:,
-                                    _self.objectColumns[0], _self.objectColumns[1]]
+            self.objectColumnEncoder = oef.GetEncoder(
+                self.objectColumnEncoderName)
+        if self.objectColumns == 'All' :
+            X_objectColumns = X.columns
+        elif type(self.objectColumns) == list:
+            X_objectColumns = X[self.objectColumns]
+        elif type(self.objectColumns) == tuple:
+            X_objectColumns = X.iloc[:,
+                              self.objectColumns[0], self.objectColumns[1]]
         if isTrain:
             X_object = pd.DataFrame(
-                _self.objectColumnEncoder.fit_transform(X_objectColumns))
+                self.objectColumnEncoder.fit_transform(X_objectColumns))
         else:
             X_object = pd.DataFrame(
-                _self.objectColumnEncoder.transform(X_objectColumns))
+                self.objectColumnEncoder.transform(X_objectColumns))
         X_object.index = X.index
         trainRemoved = X.drop(X_objectColumns.columns, axis=1)
         X = pd.concat([trainRemoved, X_object], axis=1)
         return X
 
-    def _encodeNumericColumns(_self, X):
-        if _self.numericColumns is None:
-            return
+    def _encodeNumericColumns(self, X):
+        if self.numericColumns is None:
+            return X
         isTrain = False
-        if _self.numerericColumnEncoder is None:
+        if self.numerericColumnEncoder is None:
             isTrain = True
-            _self.numerericColumnEncoder = nef.GetEncoder(
-                _self.numericColumnEncoderName)
+            self.numerericColumnEncoder = nef.GetEncoder(
+                self.numericColumnEncoderName)
         X_numericColumns = None
-        if type(_self.numericColumns) == list:
-            X_numericColumns = X[_self.objectColumns]
-        if type(_self.objectColumns) == tuple:
-            X_numericColumns = X.loc[:,
-                                     _self.objectColumns[0], _self.objectColumns[1]]
+        if self.numericColumns == 'All':
+            X_numericColumns = X
+        elif type(self.numericColumns) == list:
+            X_numericColumns = X[self.numericColumns]
+        elif type(self.numericColumns) == tuple:
+            X_numericColumns = X.iloc[:,
+                               self.numericColumns[0]: self.numericColumns[1]]
         if isTrain:
             X[X_numericColumns.columns] = pd.DataFrame(
-                _self.numerericColumnEncoder.fit_transform(X_numericColumns), index=X.index,columns=X.columns)
+                self.numerericColumnEncoder.fit_transform(X_numericColumns), index=X.index, columns=X.columns)
         else:
             X[X_numericColumns.columns] = pd.DataFrame(
-                _self.numerericColumnEncoder.transform(X_numericColumns), index=X.index,columns=X.columns)
+                self.numerericColumnEncoder.transform(X_numericColumns), index=X.index, columns=X.columns)
         return X
 
-    def _encodeLabelColumns(_self, y):
-        if _self.encodeLabel == False:
-            return
-        if _self.labelEncoder is None:
-            _self.labelEncoder = pp.LabelEncoder()
-            return pd.DataFrame(_self.labelEncoder.fit_transform(y))
-        else :
-            return pd.DataFrame(_self.labelEncoder.transform(y))
-
+    def _encodeLabelColumns(self, y):
+        if self.encodeLabel == False:
+            return y
+        if self.labelEncoder is None:
+            self.labelEncoder = pp.LabelEncoder()
+            return pd.DataFrame(self.labelEncoder.fit_transform(y), columns=[self.label])
+        else:
+            return pd.DataFrame(self.labelEncoder.transform(y), columns=[self.label])

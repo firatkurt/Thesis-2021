@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 
 # Load data and split
-trainDataAddress = r"C:\Users\FIRAT.KURT\Documents\Thesis_Data\TrainDatas\FeatureSelection_20.csv"
+trainDataAddress = r"/Users/firatkurt/Documents/Thesis_Data/MetaBrickData/RFE_50.csv"
 train_data = pd.read_csv(trainDataAddress)
 X = train_data.iloc[:,1:-1]
 y = train_data.Subtype
